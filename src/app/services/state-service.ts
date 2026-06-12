@@ -1,4 +1,4 @@
-import { Injectable, resource, signal } from '@angular/core';
+import { Injectable, linkedSignal, resource, signal } from '@angular/core';
 import { Book } from '../models/book';
 import { httpResource } from '@angular/common/http';
 
@@ -25,6 +25,19 @@ export class StateService {
     defaultValue: [],
   })
 
+  #selectedBookId = linkedSignal<Book[], string>({
+    source: () => this.searchResult.value(),
+    computation: (src, prev) => {
+      if (!prev) {
+        return src.length > 0 ? src[0].id : '';
+      }
+      if (prev.value === '' && src.length > 0) {
+        return src[0].id;
+      }
+      return prev.value;
+    }
+  })
+
 
 
   get keyword() {
@@ -35,9 +48,17 @@ export class StateService {
     return this.#searchResult.asReadonly();
   }
 
+  get selectedBookId() {
+    return this.#selectedBookId.asReadonly();
+  }
+
   setKeyword(value: string) {
     console.log('Keyword changes to', value);
     this.#keyword.set(value);
+  }
+
+  setSelectedBookId(value: string) {
+    this.#selectedBookId.set(value);
   }
 
   #searchKeywordPromise(value: string, abortSignal?: AbortSignal): Promise<Book[]> {
